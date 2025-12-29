@@ -40,6 +40,7 @@ export function StoreProvider({ children }) {
         }
 
         function recordSale({ customerId, branchId, items }) {
+            if (ONLINE_ONLY) return { ok: false, error: 'OnlineOnly' };
             const safeItems = Array.isArray(items) ? items : [];
             if (safeItems.length === 0) return { ok: false, error: 'Add at least one item to the sale.' };
 
@@ -129,6 +130,7 @@ export function StoreProvider({ children }) {
         }
 
         function transferStock({ fromBranchId, toBranchId, productId, qty, date }) {
+            if (ONLINE_ONLY) return { ok: false, error: 'OnlineOnly' };
             const q = Number(qty || 0);
             if (!Number.isFinite(q) || q <= 0) return { ok: false, error: 'Quantity must be greater than 0.' };
 
@@ -190,6 +192,7 @@ export function StoreProvider({ children }) {
         }
 
         function updateTransferStatus({ transferId, status }) {
+            if (ONLINE_ONLY) return { ok: false, error: 'OnlineOnly' };
             const nextStatus = String(status || '').toUpperCase();
             if (!transferId) return { ok: false, error: 'Missing transferId.' };
             if (!nextStatus) return { ok: false, error: 'Missing status.' };
@@ -252,6 +255,7 @@ export function StoreProvider({ children }) {
         }
 
         function create(collection, row) {
+            if (ONLINE_ONLY) throw new Error('OnlineOnly');
             if (collection === 'products' && !row.id) {
                 let createdId = '';
                 setState((s) => {
@@ -322,6 +326,7 @@ export function StoreProvider({ children }) {
         }
 
         function update(collection, id, patch) {
+            if (ONLINE_ONLY) throw new Error('OnlineOnly');
             if (collection === 'products' && Object.prototype.hasOwnProperty.call(patch || {}, 'stock')) {
                 setState((s) => {
                     const branches = Array.isArray(s.branches) ? s.branches : [];
@@ -347,6 +352,7 @@ export function StoreProvider({ children }) {
         }
 
         function remove(collection, id) {
+            if (ONLINE_ONLY) throw new Error('OnlineOnly');
             setState((s) => ({
                 ...s,
                 [collection]: (s[collection] || []).filter((r) => r.id !== id),
@@ -355,8 +361,7 @@ export function StoreProvider({ children }) {
 
         function reset() {
             if (ONLINE_ONLY) {
-                setState(ensureState());
-                return;
+                throw new Error('OnlineOnly');
             }
             const seeded = seedState();
             saveState(seeded);

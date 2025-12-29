@@ -3,6 +3,7 @@ import React from 'react';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import Modal from '../components/Modal.jsx';
 import { useStore } from '../data/StoreContext.jsx';
+import { ONLINE_ONLY } from '../data/store.js';
 
 export default function StaffPage() {
     const { state, api } = useStore();
@@ -55,6 +56,7 @@ export default function StaffPage() {
     }
 
     function save() {
+        if (ONLINE_ONLY) return;
         const patch = {
             name: String(form.name || '').trim(),
             role: form.role || 'CASHIER',
@@ -83,9 +85,13 @@ export default function StaffPage() {
                         <div className="sectionTitle">Staff</div>
                         <div className="muted" style={{ fontSize: 12 }}>Manage staff accounts and roles</div>
                     </div>
-                    <button className="button" type="button" onClick={openCreate}>+ Add Staff</button>
+                    <button className="button" type="button" onClick={openCreate} disabled={ONLINE_ONLY}>+ Add Staff</button>
                 </div>
                 <div className="divider" />
+
+                {ONLINE_ONLY ? (
+                    <div className="empty">Online-only mode: staff management will be enabled once the backend CRUD endpoints are added.</div>
+                ) : null}
 
                 <table className="table">
                     <thead>
@@ -110,10 +116,10 @@ export default function StaffPage() {
                                 <td>{u.status}</td>
                                 <td>
                                     <div className="tableActions">
-                                        <button className="button" type="button" onClick={() => openEdit(u.id)}>
+                                        <button className="button" type="button" onClick={() => openEdit(u.id)} disabled={ONLINE_ONLY}>
                                             Edit
                                         </button>
-                                        <button className="button" type="button" onClick={() => openDelete(u.id)} style={{ background: 'rgba(214,69,93,0.10)' }}>
+                                        <button className="button" type="button" onClick={() => openDelete(u.id)} disabled={ONLINE_ONLY} style={{ background: 'rgba(214,69,93,0.10)' }}>
                                             Delete
                                         </button>
                                     </div>
@@ -206,6 +212,11 @@ export default function StaffPage() {
                     setConfirmId(null);
                 }}
                 onConfirm={() => {
+                    if (ONLINE_ONLY) {
+                        setConfirmOpen(false);
+                        setConfirmId(null);
+                        return;
+                    }
                     if (confirmId) api.remove('staff', confirmId);
                     setConfirmOpen(false);
                     setConfirmId(null);

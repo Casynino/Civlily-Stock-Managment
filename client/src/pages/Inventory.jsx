@@ -3,6 +3,7 @@ import React from 'react';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import Modal from '../components/Modal.jsx';
 import { useStore } from '../data/StoreContext.jsx';
+import { ONLINE_ONLY } from '../data/store.js';
 import { useI18n } from '../i18n/I18nContext.jsx';
 
 function placeholderDataUrl(label) {
@@ -204,6 +205,10 @@ export default function InventoryPage() {
     }
 
     function save() {
+        if (ONLINE_ONLY) {
+            setError('OnlineOnly');
+            return;
+        }
         const name = String(form.name || '').trim();
         const sku = String(form.sku || '').trim();
         const categoryId = String(form.categoryId || '').trim();
@@ -260,12 +265,12 @@ export default function InventoryPage() {
                         <div className="sectionTitle">{t('inventory.title')}</div>
                         <div className="muted" style={{ fontSize: 12 }}>{t('inventory.subtitle')}</div>
                     </div>
-
                     <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
                         <button
                             className="button"
                             type="button"
                             onClick={() => {
+                                if (ONLINE_ONLY) return;
                                 setCategoryManageError('');
                                 setManageCategoriesOpen(true);
                             }}
@@ -290,11 +295,15 @@ export default function InventoryPage() {
                             className="input"
                             style={{ minWidth: 240 }}
                         />
-                        <button className="button" type="button" onClick={openCreate}>{t('inventory.newProduct')}</button>
+                        <button className="button" type="button" onClick={openCreate} disabled={ONLINE_ONLY}>{t('inventory.newProduct')}</button>
                     </div>
                 </div>
 
                 <div className="divider" />
+
+                {ONLINE_ONLY ? (
+                    <div className="empty">Online-only mode: inventory editing will be enabled once the backend CRUD endpoints are added.</div>
+                ) : null}
 
                 <div style={{ overflowX: 'auto' }}>
                     <table className="table" style={{ minWidth: 1180 }}>
@@ -336,10 +345,10 @@ export default function InventoryPage() {
                                     <td>{t(`status.${String(p.status || '').toLowerCase()}`) || p.status}</td>
                                     <td>
                                         <div className="tableActions">
-                                            <button className="button" type="button" onClick={() => openEdit(p.id)}>
+                                            <button className="button" type="button" onClick={() => openEdit(p.id)} disabled={ONLINE_ONLY}>
                                                 {t('common.edit')}
                                             </button>
-                                            <button className="button" type="button" onClick={() => openDelete(p.id)} style={{ background: 'rgba(214,69,93,0.10)' }}>
+                                            <button className="button" type="button" onClick={() => openDelete(p.id)} disabled={ONLINE_ONLY} style={{ background: 'rgba(214,69,93,0.10)' }}>
                                                 {t('common.delete')}
                                             </button>
                                         </div>
@@ -374,6 +383,7 @@ export default function InventoryPage() {
                             className="button"
                             type="button"
                             onClick={save}
+                            disabled={ONLINE_ONLY}
                             style={{ background: 'var(--primary)', color: 'var(--primaryText)' }}
                         >
                             {t('common.save')}
@@ -458,6 +468,7 @@ export default function InventoryPage() {
                             className="button"
                             type="button"
                             onClick={() => {
+                                if (ONLINE_ONLY) return;
                                 setCategoryError('');
                                 setCategoryName('');
                                 setCategoryModalOpen(true);

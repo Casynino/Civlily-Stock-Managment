@@ -3,6 +3,7 @@ import React from 'react';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import Modal from '../components/Modal.jsx';
 import { useStore } from '../data/StoreContext.jsx';
+import { ONLINE_ONLY } from '../data/store.js';
 import { useI18n } from '../i18n/I18nContext.jsx';
 
 export default function CustomersPage() {
@@ -55,6 +56,7 @@ export default function CustomersPage() {
     }
 
     function save() {
+        if (ONLINE_ONLY) return;
         const patch = {
             name: String(form.name || '').trim(),
             phone: String(form.phone || '').trim(),
@@ -88,11 +90,15 @@ export default function CustomersPage() {
                             className="input"
                             style={{ minWidth: 240 }}
                         />
-                        <button className="button" type="button" onClick={openCreate}>{t('customers.new')}</button>
+                        <button className="button" type="button" onClick={openCreate} disabled={ONLINE_ONLY}>{t('customers.new')}</button>
                     </div>
                 </div>
 
                 <div className="divider" />
+
+                {ONLINE_ONLY ? (
+                    <div className="empty">Online-only mode: customer management will be enabled once the backend CRUD endpoints are added.</div>
+                ) : null}
 
                 <table className="table">
                     <thead>
@@ -178,6 +184,11 @@ export default function CustomersPage() {
                     setConfirmId(null);
                 }}
                 onConfirm={() => {
+                    if (ONLINE_ONLY) {
+                        setConfirmOpen(false);
+                        setConfirmId(null);
+                        return;
+                    }
                     if (confirmId) api.remove('customers', confirmId);
                     setConfirmOpen(false);
                     setConfirmId(null);

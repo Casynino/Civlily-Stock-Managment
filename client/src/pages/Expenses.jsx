@@ -3,6 +3,7 @@ import React from 'react';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import Modal from '../components/Modal.jsx';
 import { useStore } from '../data/StoreContext.jsx';
+import { ONLINE_ONLY } from '../data/store.js';
 
 function money(n, currency) {
     const num = Number(n);
@@ -61,6 +62,7 @@ export default function ExpensesPage() {
     }
 
     function save() {
+        if (ONLINE_ONLY) return;
         const patch = {
             date: String(form.date || today),
             category: String(form.category || '').trim(),
@@ -88,10 +90,14 @@ export default function ExpensesPage() {
                         <div className="sectionTitle">Expenses</div>
                         <div className="muted" style={{ fontSize: 12 }}>Record and categorize expenses per branch</div>
                     </div>
-                    <button className="button" type="button" onClick={openCreate}>+ Add Expense</button>
+                    <button className="button" type="button" onClick={openCreate} disabled={ONLINE_ONLY}>+ Add Expense</button>
                 </div>
 
                 <div className="divider" />
+
+                {ONLINE_ONLY ? (
+                    <div className="empty">Online-only mode: expenses will be enabled once the backend CRUD endpoints are added.</div>
+                ) : null}
 
                 <table className="table">
                     <thead>
@@ -174,6 +180,11 @@ export default function ExpensesPage() {
                     setConfirmId(null);
                 }}
                 onConfirm={() => {
+                    if (ONLINE_ONLY) {
+                        setConfirmOpen(false);
+                        setConfirmId(null);
+                        return;
+                    }
                     if (confirmId) api.remove('expenses', confirmId);
                     setConfirmOpen(false);
                     setConfirmId(null);

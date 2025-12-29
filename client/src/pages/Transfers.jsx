@@ -1,6 +1,7 @@
 import React from 'react';
 
 import { useStore } from '../data/StoreContext.jsx';
+import { ONLINE_ONLY } from '../data/store.js';
 
 export default function TransfersPage() {
     const { state, api } = useStore();
@@ -37,6 +38,10 @@ export default function TransfersPage() {
 
     function setStatus(transferId, status) {
         setError('');
+        if (ONLINE_ONLY) {
+            setError('OnlineOnly');
+            return;
+        }
         const res = api.updateTransferStatus({ transferId, status });
         if (!res.ok) setError(res.error || 'Update failed.');
     }
@@ -44,6 +49,11 @@ export default function TransfersPage() {
     function submit(e) {
         e.preventDefault();
         setError('');
+
+        if (ONLINE_ONLY) {
+            setError('OnlineOnly');
+            return;
+        }
 
         const q = Number(qty || 0);
         if (!Number.isFinite(q) || q <= 0) {
@@ -90,6 +100,10 @@ export default function TransfersPage() {
                 </div>
 
                 <div className="divider" />
+
+                {ONLINE_ONLY ? (
+                    <div className="empty">Online-only mode: transfers will be enabled once the backend CRUD endpoints are added.</div>
+                ) : null}
 
                 {error ? <div style={{ marginBottom: 12, color: 'var(--danger)', fontWeight: 800 }}>{error}</div> : null}
 
@@ -138,7 +152,7 @@ export default function TransfersPage() {
                     </div>
 
                     <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                        <button className="button" type="submit" style={{ background: 'var(--primary)', color: 'var(--primaryText)' }}>
+                        <button className="button" type="submit" disabled={ONLINE_ONLY} style={{ background: 'var(--primary)', color: 'var(--primaryText)' }}>
                             Transfer
                         </button>
                     </div>
@@ -180,7 +194,7 @@ export default function TransfersPage() {
                                         <td>{t.status || 'Completed'}</td>
                                         <td>
                                             {st === 'PENDING' ? (
-                                                <button className="button" type="button" onClick={() => setStatus(t.id, 'APPROVED')}>
+                                                <button className="button" type="button" onClick={() => setStatus(t.id, 'APPROVED')} disabled={ONLINE_ONLY}>
                                                     Approve
                                                 </button>
                                             ) : null}
@@ -189,6 +203,7 @@ export default function TransfersPage() {
                                                     className="button"
                                                     type="button"
                                                     onClick={() => setStatus(t.id, 'COMPLETED')}
+                                                    disabled={ONLINE_ONLY}
                                                     style={{ background: 'var(--primary)', color: 'var(--primaryText)' }}
                                                 >
                                                     Complete
