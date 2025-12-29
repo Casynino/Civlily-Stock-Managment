@@ -61,17 +61,6 @@ export default function WelcomePage() {
                                 {t('auth.welcome.signIn')}
                             </button>
 
-                            <div className="authDemo">
-                                <div className="muted" style={{ fontSize: 12, fontWeight: 800, marginBottom: 6 }}>
-                                    {t('auth.welcome.demoHint')}
-                                </div>
-                                <div className="authCode">
-                                    ADMIN001 / Admin123! &nbsp;|&nbsp; admin@civlily.local / Admin123!
-                                    <br />
-                                    ASH001 / Asha123! &nbsp;|&nbsp; asha@civlily.local / Asha123!
-                                </div>
-                            </div>
-
                             <div className="muted" style={{ fontSize: 12, lineHeight: 1.5 }}>
                                 {t('auth.welcome.footer')}
                             </div>

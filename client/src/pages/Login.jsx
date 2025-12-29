@@ -135,15 +135,6 @@ export default function LoginPage() {
                                 </button>
                             </div>
                         </form>
-
-                        <div className="authDemo">
-                            <div className="muted" style={{ fontSize: 12, fontWeight: 800, marginBottom: 6 }}>
-                                {t('auth.welcome.demoHint')}
-                            </div>
-                            <div className="authCode">
-                                ADMIN001 / Admin123! &nbsp;|&nbsp; admin@civlily.local / Admin123!
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>

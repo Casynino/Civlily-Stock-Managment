@@ -88,16 +88,6 @@ export default function SettingsPage() {
                             ))}
                         </select>
                     </label>
-
-                    <div className="sectionHeader" style={{ marginTop: 6 }}>
-                        <div>
-                            <div className="sectionTitle">{t('settings.demoData')}</div>
-                            <div className="muted" style={{ fontSize: 12 }}>{t('settings.demoDataSubtitle')}</div>
-                        </div>
-                        <button className="button" type="button" onClick={() => api.reset()} style={{ background: 'rgba(214,69,93,0.10)' }}>
-                            {t('settings.reset')}
-                        </button>
-                    </div>
                 </div>
             </div>
         </div>

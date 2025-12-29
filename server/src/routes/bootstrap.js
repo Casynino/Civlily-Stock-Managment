@@ -35,6 +35,8 @@ bootstrapRouter.get(
             })
             : [];
 
+        const customers = await prisma.customer.findMany({ orderBy: { createdAt: 'desc' } });
+
         const productStocks = {};
         for (const bid of branchIds) productStocks[bid] = {};
         for (const row of stockRows) {
@@ -66,7 +68,15 @@ bootstrapRouter.get(
             })),
             expenses: [],
             transfers: [],
-            customers: [],
+            customers: customers.map((c) => ({
+                id: c.id,
+                name: c.name,
+                phone: c.phone,
+                balance: String(c.balance),
+                status: c.status,
+                createdAt: c.createdAt,
+                updatedAt: c.updatedAt,
+            })),
         });
     })
 );

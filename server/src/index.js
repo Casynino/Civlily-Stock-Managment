@@ -7,6 +7,7 @@ import morgan from 'morgan';
 
 import { authRouter } from './routes/auth.js';
 import { bootstrapRouter } from './routes/bootstrap.js';
+import { customersRouter } from './routes/customers.js';
 import { diagnosticsRouter } from './routes/diagnostics.js';
 import { healthRouter } from './routes/health.js';
 import { productsRouter } from './routes/products.js';
@@ -54,6 +55,7 @@ app.use('/api', healthRouter);
 app.use('/api', authRouter);
 app.use('/api', bootstrapRouter);
 app.use('/api', diagnosticsRouter);
+app.use('/api', customersRouter);
 app.use('/api', productsRouter);
 app.use('/api', salesRouter);
 

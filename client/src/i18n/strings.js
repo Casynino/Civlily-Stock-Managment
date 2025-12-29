@@ -23,13 +23,13 @@ export const STRINGS = {
 
         // Settings
         'settings.title': 'Settings',
-        'settings.subtitle': 'Settings saved locally (no backend)',
+        'settings.subtitle': 'Settings saved locally',
         'settings.save': 'Save',
         'settings.language': 'Language',
         'settings.currency': 'Currency',
         'settings.activeBranch': 'Active branch',
-        'settings.demoData': 'Demo data',
-        'settings.demoDataSubtitle': 'Reset local data to the initial demo state',
+        'settings.demoData': 'Data',
+        'settings.demoDataSubtitle': 'Reset',
         'settings.reset': 'Reset',
 
         // Dashboard
@@ -102,7 +102,7 @@ export const STRINGS = {
 
         // Customers
         'customers.title': 'Customers',
-        'customers.subtitle': 'Manage customers, balances, and history (UI-only)',
+        'customers.subtitle': 'Manage customers, balances, and history',
         'customers.searchPlaceholder': 'Search customers…',
         'customers.new': '+ New Customer',
         'customers.table.id': 'ID',
@@ -229,8 +229,8 @@ export const STRINGS = {
         'auth.welcome.body': 'Track stock, scan barcodes, and run sales across branches — all in one place.',
         'auth.welcome.signIn': 'Sign in',
         'auth.welcome.signInPanelTitle': 'Sign in to continue',
-        'auth.welcome.signInPanelSubtitle': 'Secure session · Local demo',
-        'auth.welcome.demoHint': 'Demo accounts:',
+        'auth.welcome.signInPanelSubtitle': 'Secure session',
+        'auth.welcome.demoHint': '',
         'auth.welcome.teamTitle': 'Your Team',
         'auth.welcome.teamHint': 'Connected • Fast • Focused',
         'auth.welcome.footer': 'Tip: Use the Scan button after login for the fastest workflow.',
@@ -269,13 +269,13 @@ export const STRINGS = {
 
         // Settings
         'settings.title': '设置',
-        'settings.subtitle': '设置已本地保存（无后端）',
+        'settings.subtitle': '设置保存在本地',
         'settings.save': '保存',
         'settings.language': '语言',
         'settings.currency': '货币',
         'settings.activeBranch': '当前分店',
-        'settings.demoData': '演示数据',
-        'settings.demoDataSubtitle': '将本地数据重置为初始演示状态',
+        'settings.demoData': '数据',
+        'settings.demoDataSubtitle': '将本地数据重置为初始状态',
         'settings.reset': '重置',
 
         // Dashboard

@@ -1,15 +1,17 @@
 import React from 'react';
 
+import { api as http } from '../api.js';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import Modal from '../components/Modal.jsx';
 import { useStore } from '../data/StoreContext.jsx';
-import { ONLINE_ONLY } from '../data/store.js';
 import { useI18n } from '../i18n/I18nContext.jsx';
 
 export default function CustomersPage() {
     const { state, api } = useStore();
     const { t } = useI18n();
     const [query, setQuery] = React.useState('');
+    const [error, setError] = React.useState('');
+    const [saving, setSaving] = React.useState(false);
 
     const [editorOpen, setEditorOpen] = React.useState(false);
     const [editingId, setEditingId] = React.useState(null);
@@ -55,23 +57,39 @@ export default function CustomersPage() {
         setConfirmOpen(true);
     }
 
-    function save() {
-        if (ONLINE_ONLY) return;
+    async function refresh() {
+        const b = await http.get('/bootstrap');
+        api.hydrate(b?.data);
+    }
+
+    async function save() {
+        setError('');
+        setSaving(true);
         const patch = {
             name: String(form.name || '').trim(),
             phone: String(form.phone || '').trim(),
             balance: Number(form.balance || 0),
             status: form.status || 'Active',
         };
-        if (!patch.name) return;
-
-        if (editingId) {
-            api.update('customers', editingId, patch);
-        } else {
-            api.create('customers', patch);
+        if (!patch.name) {
+            setSaving(false);
+            return;
         }
-        setEditorOpen(false);
-        setEditingId(null);
+
+        try {
+            if (editingId) {
+                await http.put(`/customers/${editingId}`, patch);
+            } else {
+                await http.post('/customers', patch);
+            }
+            await refresh();
+            setEditorOpen(false);
+            setEditingId(null);
+        } catch (e) {
+            setError(e?.response?.data?.error || 'Failed to save customer.');
+        } finally {
+            setSaving(false);
+        }
     }
 
     return (
@@ -90,15 +108,13 @@ export default function CustomersPage() {
                             className="input"
                             style={{ minWidth: 240 }}
                         />
-                        <button className="button" type="button" onClick={openCreate} disabled={ONLINE_ONLY}>{t('customers.new')}</button>
+                        <button className="button" type="button" onClick={openCreate}>{t('customers.new')}</button>
                     </div>
                 </div>
 
                 <div className="divider" />
 
-                {ONLINE_ONLY ? (
-                    <div className="empty">Online-only mode: customer management will be enabled once the backend CRUD endpoints are added.</div>
-                ) : null}
+                {error ? <div style={{ marginBottom: 12, color: 'var(--danger)', fontWeight: 800 }}>{error}</div> : null}
 
                 <table className="table">
                     <thead>
@@ -145,7 +161,7 @@ export default function CustomersPage() {
                             {t('common.cancel')}
                         </button>
                         <button className="button" type="button" onClick={save} style={{ background: 'var(--primary)', color: 'var(--primaryText)' }}>
-                            {t('common.save')}
+                            {saving ? '…' : t('common.save')}
                         </button>
                     </div>
                 }
@@ -184,14 +200,19 @@ export default function CustomersPage() {
                     setConfirmId(null);
                 }}
                 onConfirm={() => {
-                    if (ONLINE_ONLY) {
-                        setConfirmOpen(false);
-                        setConfirmId(null);
-                        return;
-                    }
-                    if (confirmId) api.remove('customers', confirmId);
-                    setConfirmOpen(false);
-                    setConfirmId(null);
+                    (async () => {
+                        if (!confirmId) return;
+                        setError('');
+                        try {
+                            await http.delete(`/customers/${confirmId}`);
+                            await refresh();
+                        } catch (e) {
+                            setError(e?.response?.data?.error || 'Failed to delete customer.');
+                        } finally {
+                            setConfirmOpen(false);
+                            setConfirmId(null);
+                        }
+                    })();
                 }}
             />
         </div>
