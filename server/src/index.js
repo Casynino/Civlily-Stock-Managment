@@ -13,9 +13,33 @@ import { salesRouter } from './routes/sales.js';
 const app = express();
 
 app.use(helmet());
+
+const configuredOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+const allowedOriginSet = new Set(configuredOrigins);
+const isAllowedVercelOrigin = (origin) => {
+    const o = String(origin || '');
+    if (!o) return false;
+    try {
+        const { hostname, protocol } = new URL(o);
+        if (protocol !== 'https:' && protocol !== 'http:') return false;
+        return hostname.endsWith('.vercel.app');
+    } catch {
+        return false;
+    }
+};
+
 app.use(
     cors({
-        origin: (process.env.CORS_ORIGIN || 'http://localhost:5173').split(',').map((s) => s.trim()),
+        origin: (origin, cb) => {
+            // allow non-browser clients (curl/postman) that may send no Origin
+            if (!origin) return cb(null, true);
+            if (allowedOriginSet.has(origin)) return cb(null, true);
+            if (isAllowedVercelOrigin(origin)) return cb(null, true);
+            return cb(null, false);
+        },
         credentials: true,
     })
 );
