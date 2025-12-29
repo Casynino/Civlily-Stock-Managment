@@ -68,10 +68,11 @@ export default function SalesPage() {
         return Number(stockBucket[scannedProduct.id] ?? scannedProduct.stock ?? 0);
     }, [scannedProduct, stockBucket]);
 
-    const productMatch = products.find((p) => p.id === productQuery)
-        || products.find((p) => String(p.sku).toLowerCase() === String(productQuery).toLowerCase())
+    const productMatch = products.find((p) => String(p.id || '') === String(productQuery || ''))
+        || products.find((p) => String(p.code || '').toLowerCase() === String(productQuery).toLowerCase())
+        || products.find((p) => String(p.sku || '').toLowerCase() === String(productQuery).toLowerCase())
         || products.find((p) => String(p.barcode || '').toLowerCase() === String(productQuery).toLowerCase())
-        || products.find((p) => String(p.name).toLowerCase() === String(productQuery).toLowerCase());
+        || products.find((p) => String(p.name || '').toLowerCase() === String(productQuery).toLowerCase());
 
     const cartTotal = cart.reduce((sum, it) => sum + Number(it.total || 0), 0);
 
@@ -378,7 +379,9 @@ export default function SalesPage() {
                                 />
                                 <datalist id="product-list">
                                     {products.map((p) => (
-                                        <option key={p.id} value={p.id}>{p.name}</option>
+                                        <option key={p.id} value={p.code || p.id}>
+                                            {p.name}
+                                        </option>
                                     ))}
                                 </datalist>
                                 {productMatch ? (
