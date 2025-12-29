@@ -34,7 +34,7 @@ function titleKeyForPath(pathname) {
 }
 
 function ProtectedApp() {
-    const { isAuthed, staff } = useAuth();
+    const { isAuthed, staff, authLoading, authError } = useAuth();
     const loc = useLocation();
 
     const role = String(staff?.role || '').toUpperCase();
@@ -52,7 +52,24 @@ function ProtectedApp() {
         return canAccessPath(path) ? el : <Navigate to="/" replace />;
     }
 
-    if (!isAuthed) return <Navigate to="/welcome" replace />;
+    if (authLoading) {
+        return (
+            <div style={{ padding: 24, fontWeight: 800 }}>
+                Loading…
+            </div>
+        );
+    }
+
+    if (!isAuthed) {
+        return authError ? (
+            <div style={{ padding: 24 }}>
+                <div style={{ fontWeight: 900, marginBottom: 8 }}>Connection issue</div>
+                <div>{authError}</div>
+            </div>
+        ) : (
+            <Navigate to="/welcome" replace />
+        );
+    }
 
     return (
         <AppShell titleKey={titleKeyForPath(loc.pathname)}>

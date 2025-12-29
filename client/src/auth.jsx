@@ -11,6 +11,8 @@ const AuthContext = React.createContext(null);
 export function AuthProvider({ children }) {
     const { state, api } = useStore();
     const [staff, setStaff] = React.useState(null);
+    const [authLoading, setAuthLoading] = React.useState(() => Boolean(localStorage.getItem(TOKEN_KEY)));
+    const [authError, setAuthError] = React.useState('');
 
     React.useEffect(() => {
         const token = localStorage.getItem(TOKEN_KEY);
@@ -24,6 +26,8 @@ export function AuthProvider({ children }) {
         let cancelled = false;
         (async () => {
             try {
+                setAuthLoading(true);
+                setAuthError('');
                 const r = await http.get('/auth/me', {
                     headers: { 'Cache-Control': 'no-store', Pragma: 'no-cache' },
                     params: { _ts: Date.now() },
@@ -42,8 +46,20 @@ export function AuthProvider({ children }) {
                 } catch {
                     // ignore
                 }
-            } catch {
-                // ignore - interceptor will handle 401 and force logout
+            } catch (e) {
+                if (cancelled) return;
+                const status = e?.response?.status;
+                if (status === 401) {
+                    setStaff(null);
+                    localStorage.removeItem(SESSION_KEY);
+                    localStorage.removeItem(TOKEN_KEY);
+                    setAuthToken(null);
+                    setBranchId(null);
+                } else {
+                    setAuthError('Unable to reach the server. Check your connection and try again.');
+                }
+            } finally {
+                if (!cancelled) setAuthLoading(false);
             }
         })();
 
@@ -78,39 +94,47 @@ export function AuthProvider({ children }) {
         const pass = String(password || '');
         if (!ident || !pass) throw new Error('Invalid credentials');
 
-        const r = await http.post('/auth/login', { identifier, password: pass });
-        const token = String(r?.data?.token || '');
-        const nextStaff = r?.data?.staff || null;
-        if (!token || !nextStaff) throw new Error('Invalid credentials');
-
-        localStorage.setItem(TOKEN_KEY, token);
-        setAuthToken(token);
-
-        setStaff(nextStaff);
-        localStorage.setItem(SESSION_KEY, JSON.stringify(nextStaff));
-
+        setAuthLoading(true);
+        setAuthError('');
         try {
-            const b = await http.get('/bootstrap', {
-                headers: { 'Cache-Control': 'no-store', Pragma: 'no-cache' },
-                params: { _ts: Date.now() },
-            });
-            api.hydrate(b?.data);
-        } catch {
-            // ignore
+            const r = await http.post('/auth/login', { identifier, password: pass });
+            const token = String(r?.data?.token || '');
+            const nextStaff = r?.data?.staff || null;
+            if (!token || !nextStaff) throw new Error('Invalid credentials');
+
+            localStorage.setItem(TOKEN_KEY, token);
+            setAuthToken(token);
+
+            setStaff(nextStaff);
+            localStorage.setItem(SESSION_KEY, JSON.stringify(nextStaff));
+
+            try {
+                const b = await http.get('/bootstrap', {
+                    headers: { 'Cache-Control': 'no-store', Pragma: 'no-cache' },
+                    params: { _ts: Date.now() },
+                });
+                api.hydrate(b?.data);
+            } catch {
+                // ignore
+            }
+
+            const branches = Array.isArray(state.branches) ? state.branches : [];
+            const fallbackBranchId = String(branches[0]?.id || '');
+            const role = String(nextStaff.role || '').toUpperCase();
+            const nextBranchId = role === 'ADMIN'
+                ? String(state.settings?.activeBranchId || nextStaff.branchId || fallbackBranchId)
+                : String(nextStaff.branchId || fallbackBranchId);
+
+            if (nextBranchId) api.setSettings({ activeBranchId: nextBranchId });
+        } finally {
+            setAuthLoading(false);
         }
-
-        const branches = Array.isArray(state.branches) ? state.branches : [];
-        const fallbackBranchId = String(branches[0]?.id || '');
-        const role = String(nextStaff.role || '').toUpperCase();
-        const nextBranchId = role === 'ADMIN'
-            ? String(state.settings?.activeBranchId || nextStaff.branchId || fallbackBranchId)
-            : String(nextStaff.branchId || fallbackBranchId);
-
-        if (nextBranchId) api.setSettings({ activeBranchId: nextBranchId });
     }
 
     function logout() {
         setStaff(null);
+        setAuthError('');
+        setAuthLoading(false);
         localStorage.removeItem(SESSION_KEY);
         localStorage.removeItem(TOKEN_KEY);
         setAuthToken(null);
@@ -118,7 +142,7 @@ export function AuthProvider({ children }) {
     }
 
     return (
-        <AuthContext.Provider value={{ staff, isAuthed: Boolean(staff), login, logout }}>
+        <AuthContext.Provider value={{ staff, isAuthed: Boolean(staff), authLoading, authError, login, logout }}>
             {children}
         </AuthContext.Provider>
     );
