@@ -48,8 +48,8 @@ async function main() {
     });
 
     const p1 = await prisma.product.upsert({
-        where: { name: '108mm Smoking Paper' },
-        update: {},
+        where: { sku: 'PRD003' },
+        update: { name: '108mm Smoking Paper', qr: 'PRD003', sellingPrice: '1000', costPrice: '600', status: 'Active' },
         create: {
             name: '108mm Smoking Paper',
             sku: 'PRD003',
