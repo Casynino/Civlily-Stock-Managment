@@ -74,7 +74,9 @@ model Product {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  stock BranchStock[]
+  stock     BranchStock[]
+  saleItems SaleItem[]
+  transfers Transfer[]
 }
 
 model BranchStock {
