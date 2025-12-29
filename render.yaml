@@ -6,8 +6,8 @@ services:
     rootDir: server
     plan: starter
     autoDeploy: true
-    buildCommand: npm install
-    startCommand: bash -lc "npm run prisma:generate && npm run prisma:push && npm run db:seed && npm run start"
+    buildCommand: bash -lc "npm install && npm run prisma:generate && npm run prisma:push"
+    startCommand: bash -lc "npm run prisma:generate && npm run start"
     envVars:
       - key: NODE_ENV
         value: production

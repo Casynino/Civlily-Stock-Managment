@@ -5,7 +5,7 @@ export const ONLINE_ONLY = (() => {
         const prod = Boolean(import.meta?.env?.PROD);
         const base = String(import.meta?.env?.VITE_API_BASE || '');
         if (!prod) return false;
-        if (!base) return false;
+        if (!base) return true;
         return !/localhost|127\.0\.0\.1/i.test(base);
     } catch {
         return false;

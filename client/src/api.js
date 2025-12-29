@@ -1,6 +1,12 @@
 import axios from 'axios';
 
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:4000/api';
+const API_BASE = (() => {
+    const base = String(import.meta.env.VITE_API_BASE || '').trim();
+    const prod = Boolean(import.meta.env.PROD);
+    if (base) return base;
+    if (prod) throw new Error('Missing VITE_API_BASE (production).');
+    return 'http://localhost:4000/api';
+})();
 
 export const api = axios.create({
     baseURL: API_BASE,
