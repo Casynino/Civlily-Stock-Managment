@@ -42,7 +42,12 @@ export function AuthProvider({ children }) {
                         headers: { 'Cache-Control': 'no-store', Pragma: 'no-cache' },
                         params: { _ts: Date.now() },
                     });
-                    if (!cancelled) api.hydrate(b?.data);
+                    if (!cancelled) {
+                        const payload = b?.data;
+                        api.hydrate(payload);
+                        const bid = String(payload?.branches?.[0]?.id || '');
+                        if (bid) api.setSettings({ activeBranchId: bid });
+                    }
                 } catch {
                     // ignore
                 }
@@ -69,16 +74,13 @@ export function AuthProvider({ children }) {
     }, []);
 
     React.useEffect(() => {
-        if (!staff) return;
-        const role = String(staff.role || '').toUpperCase();
-        if (role === 'ADMIN') return;
         const branches = Array.isArray(state.branches) ? state.branches : [];
-        const fallbackBranchId = String(branches[0]?.id || '');
-        const nextBranchId = String(staff.branchId || fallbackBranchId);
-        if (nextBranchId && state.settings?.activeBranchId !== nextBranchId) {
-            api.setSettings({ activeBranchId: nextBranchId });
-        }
-    }, [staff, state.branches, state.settings?.activeBranchId, api]);
+        const nextBranchId = String(branches[0]?.id || '');
+        if (!nextBranchId) return;
+        const current = String(state.settings?.activeBranchId || '');
+        const exists = branches.some((b) => String(b?.id || '') === current);
+        if (!current || !exists) api.setSettings({ activeBranchId: nextBranchId });
+    }, [state.branches, state.settings?.activeBranchId, api]);
 
     React.useEffect(() => {
         const bid = String(state.settings?.activeBranchId || '');
@@ -113,19 +115,13 @@ export function AuthProvider({ children }) {
                     headers: { 'Cache-Control': 'no-store', Pragma: 'no-cache' },
                     params: { _ts: Date.now() },
                 });
-                api.hydrate(b?.data);
+                const payload = b?.data;
+                api.hydrate(payload);
+                const bid = String(payload?.branches?.[0]?.id || '');
+                if (bid) api.setSettings({ activeBranchId: bid });
             } catch {
                 // ignore
             }
-
-            const branches = Array.isArray(state.branches) ? state.branches : [];
-            const fallbackBranchId = String(branches[0]?.id || '');
-            const role = String(nextStaff.role || '').toUpperCase();
-            const nextBranchId = role === 'ADMIN'
-                ? String(state.settings?.activeBranchId || nextStaff.branchId || fallbackBranchId)
-                : String(nextStaff.branchId || fallbackBranchId);
-
-            if (nextBranchId) api.setSettings({ activeBranchId: nextBranchId });
         } finally {
             setAuthLoading(false);
         }

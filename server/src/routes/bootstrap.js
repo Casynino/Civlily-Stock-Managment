@@ -16,10 +16,8 @@ bootstrapRouter.get(
         res.set('Pragma', 'no-cache');
         res.set('Expires', '0');
 
-        const branches =
-            role === 'ADMIN'
-                ? await prisma.branch.findMany({ orderBy: { name: 'asc' } })
-                : await prisma.branch.findMany({ where: { id: String(req.user?.branchId || '') } });
+        const primaryBranch = await prisma.branch.findFirst({ orderBy: { createdAt: 'asc' } });
+        const branches = primaryBranch ? [primaryBranch] : [];
 
         const branchIds = branches.map((b) => b.id);
 
