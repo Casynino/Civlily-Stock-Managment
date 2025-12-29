@@ -10,14 +10,7 @@ const AuthContext = React.createContext(null);
 
 export function AuthProvider({ children }) {
     const { state, api } = useStore();
-    const [staff, setStaff] = React.useState(() => {
-        try {
-            const raw = localStorage.getItem(SESSION_KEY);
-            return raw ? JSON.parse(raw) : null;
-        } catch {
-            return null;
-        }
-    });
+    const [staff, setStaff] = React.useState(null);
 
     React.useEffect(() => {
         const token = localStorage.getItem(TOKEN_KEY);
@@ -31,14 +24,20 @@ export function AuthProvider({ children }) {
         let cancelled = false;
         (async () => {
             try {
-                const r = await http.get('/auth/me');
+                const r = await http.get('/auth/me', {
+                    headers: { 'Cache-Control': 'no-store', Pragma: 'no-cache' },
+                    params: { _ts: Date.now() },
+                });
                 if (cancelled) return;
                 const next = r?.data?.staff || null;
                 setStaff(next);
                 localStorage.setItem(SESSION_KEY, JSON.stringify(next));
 
                 try {
-                    const b = await http.get('/bootstrap');
+                    const b = await http.get('/bootstrap', {
+                        headers: { 'Cache-Control': 'no-store', Pragma: 'no-cache' },
+                        params: { _ts: Date.now() },
+                    });
                     if (!cancelled) api.hydrate(b?.data);
                 } catch {
                     // ignore
@@ -91,7 +90,10 @@ export function AuthProvider({ children }) {
         localStorage.setItem(SESSION_KEY, JSON.stringify(nextStaff));
 
         try {
-            const b = await http.get('/bootstrap');
+            const b = await http.get('/bootstrap', {
+                headers: { 'Cache-Control': 'no-store', Pragma: 'no-cache' },
+                params: { _ts: Date.now() },
+            });
             api.hydrate(b?.data);
         } catch {
             // ignore

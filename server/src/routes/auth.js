@@ -59,6 +59,9 @@ authRouter.get(
     asyncHandler(async (req, res) => {
         const staff = await prisma.staff.findUnique({ where: { id: req.user.id } });
         if (!staff) throw httpError(401, 'Unauthorized');
+        res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+        res.set('Pragma', 'no-cache');
+        res.set('Expires', '0');
         res.json({
             staff: {
                 id: staff.id,

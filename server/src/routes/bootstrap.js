@@ -12,6 +12,10 @@ bootstrapRouter.get(
     asyncHandler(async (req, res) => {
         const role = String(req.user?.role || '').toUpperCase();
 
+        res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+        res.set('Pragma', 'no-cache');
+        res.set('Expires', '0');
+
         const branches =
             role === 'ADMIN'
                 ? await prisma.branch.findMany({ orderBy: { name: 'asc' } })
