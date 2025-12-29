@@ -50,8 +50,18 @@ export default function SalesPage() {
 
     const [productQuery, setProductQuery] = React.useState('');
     const [qty, setQty] = React.useState(1);
-    const [customerId, setCustomerId] = React.useState(customers[0]?.id);
+    const walkInCustomerId = React.useMemo(() => {
+        const w = customers.find((c) => String(c.code || '') === 'CU000' || String(c.name || '').toUpperCase() === 'WALK-IN');
+        return w ? String(w.id || '') : '';
+    }, [customers]);
+    const [customerId, setCustomerId] = React.useState(walkInCustomerId || customers[0]?.id);
     const [cart, setCart] = React.useState([]);
+
+    React.useEffect(() => {
+        if (!walkInCustomerId) return;
+        if (String(customerId || '')) return;
+        setCustomerId(walkInCustomerId);
+    }, [walkInCustomerId, customerId]);
 
     const scannedProduct = React.useMemo(() => {
         if (!scannedProductId) return null;

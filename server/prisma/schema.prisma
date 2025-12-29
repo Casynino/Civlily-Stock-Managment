@@ -161,6 +161,7 @@ model Transfer {
 
 model Customer {
   id        String   @id @default(cuid())
+  code      String?  @unique
   name      String
   phone     String?
   balance   Decimal  @default(0)

@@ -20,6 +20,7 @@ customersRouter.get(
         res.json({
             customers: customers.map((c) => ({
                 id: c.id,
+                code: c.code,
                 name: c.name,
                 phone: c.phone,
                 balance: String(c.balance),
@@ -45,18 +46,33 @@ customersRouter.post(
             })
             .parse(req.body);
 
-        const created = await prisma.customer.create({
-            data: {
-                name: body.name.trim(),
-                phone: body.phone ? String(body.phone).trim() : null,
-                balance: String(Number(body.balance || 0)),
-                status: String(body.status || 'Active'),
-            },
+        const created = await prisma.$transaction(async (tx) => {
+            const re = /^CU(\d+)$/i;
+            const latest = await tx.customer.findMany({
+                where: { code: { startsWith: 'CU' } },
+                select: { code: true },
+                orderBy: { code: 'desc' },
+                take: 1,
+            });
+            const m = String(latest?.[0]?.code || '').match(re);
+            const max = m ? Number(m[1]) : 0;
+            const next = `CU${String(Math.max(max + 1, 1)).padStart(3, '0')}`;
+
+            return tx.customer.create({
+                data: {
+                    code: next,
+                    name: body.name.trim(),
+                    phone: body.phone ? String(body.phone).trim() : null,
+                    balance: String(Number(body.balance || 0)),
+                    status: String(body.status || 'Active'),
+                },
+            });
         });
 
         res.status(201).json({
             customer: {
                 id: created.id,
+                code: created.code,
                 name: created.name,
                 phone: created.phone,
                 balance: String(created.balance),
@@ -98,6 +114,7 @@ customersRouter.put(
         res.json({
             customer: {
                 id: updated.id,
+                code: updated.code,
                 name: updated.name,
                 phone: updated.phone,
                 balance: String(updated.balance),
@@ -116,6 +133,12 @@ customersRouter.delete(
         requireWriteRole(req);
         const id = String(req.params.id || '');
         if (!id) throw httpError(400, 'MissingId');
+
+        const existing = await prisma.customer.findUnique({ where: { id }, select: { code: true, name: true } });
+        if (!existing) throw httpError(404, 'CustomerNotFound');
+        if (String(existing.code || '') === 'CU000' || String(existing.name || '').toUpperCase() === 'WALK-IN') {
+            throw httpError(400, 'CustomerNotDeletable');
+        }
 
         await prisma.customer.delete({ where: { id } });
         res.json({ ok: true });

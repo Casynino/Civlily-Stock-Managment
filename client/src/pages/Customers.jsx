@@ -39,7 +39,11 @@ export default function CustomersPage() {
     const rows = customers.filter((c) => {
         const q = query.trim().toLowerCase();
         if (!q) return true;
-        return String(c.name).toLowerCase().includes(q) || String(c.phone).toLowerCase().includes(q) || String(c.id).toLowerCase().includes(q);
+        return (
+            String(c.name).toLowerCase().includes(q)
+            || String(c.phone).toLowerCase().includes(q)
+            || String(c.code || '').toLowerCase().includes(q)
+        );
     });
 
     function openCreate() {
@@ -129,7 +133,7 @@ export default function CustomersPage() {
                     <tbody>
                         {rows.map((c) => (
                             <tr key={c.id}>
-                                <td>{c.id}</td>
+                                <td>{c.code || '—'}</td>
                                 <td style={{ fontWeight: 800 }}>{c.name}</td>
                                 <td>{c.phone}</td>
                                 <td>{c.balance}</td>
@@ -138,9 +142,11 @@ export default function CustomersPage() {
                                         <button className="button" type="button" onClick={() => openEdit(c.id)}>
                                             {t('common.edit')}
                                         </button>
-                                        <button className="button" type="button" onClick={() => openDelete(c.id)} style={{ background: 'rgba(214,69,93,0.10)' }}>
-                                            {t('common.delete')}
-                                        </button>
+                                        {String(c.code || '') === 'CU000' ? null : (
+                                            <button className="button" type="button" onClick={() => openDelete(c.id)} style={{ background: 'rgba(214,69,93,0.10)' }}>
+                                                {t('common.delete')}
+                                            </button>
+                                        )}
                                     </div>
                                 </td>
                             </tr>
