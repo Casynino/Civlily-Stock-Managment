@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: civlily-api
+    runtime: node
+    rootDir: server
+    plan: starter
+    autoDeploy: true
+    buildCommand: npm install
+    startCommand: bash -lc "npm run prisma:deploy && npm run start"
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4000
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: CORS_ORIGIN
+        sync: false

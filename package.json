@@ -1,0 +1,17 @@
+{
+  "name": "civlily",
+  "private": true,
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "dev": "npm --workspace client run dev",
+    "dev:server": "npm --workspace server run dev",
+    "dev:full": "npm run dev:server & npm run dev",
+    "build": "npm --workspace client run build",
+    "preview": "npm --workspace client run preview",
+    "lint": "npm --workspace client run lint"
+  },
+  "devDependencies": {}
+}
