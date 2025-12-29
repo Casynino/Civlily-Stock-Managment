@@ -7,6 +7,54 @@ import { requireAuth, resolveBranchScope } from '../middleware/auth.js';
 
 export const salesRouter = Router();
 
+salesRouter.get(
+    '/sales',
+    requireAuth,
+    asyncHandler(async (req, res) => {
+        const role = String(req.user.role || '').toUpperCase();
+        const scopedBranchId = resolveBranchScope(req);
+        const requestedBranchId = String(req.query.branchId || '');
+
+        let branchId = scopedBranchId;
+        if (role === 'ADMIN') {
+            branchId = requestedBranchId || scopedBranchId;
+        } else if (requestedBranchId && requestedBranchId !== scopedBranchId) {
+            throw httpError(403, 'ForbiddenBranch');
+        }
+
+        const where = branchId ? { branchId } : undefined;
+        const sales = await prisma.sale.findMany({
+            where,
+            orderBy: { createdAt: 'desc' },
+            take: 100,
+            include: { items: true },
+        });
+
+        res.json({
+            sales: sales.map((s) => ({
+                id: s.id,
+                code: s.code,
+                date: s.date,
+                time: s.time,
+                total: String(s.total),
+                paid: String(s.paid),
+                change: String(s.change),
+                status: s.status,
+                paymentMethod: s.paymentMethod,
+                branchId: s.branchId,
+                createdAt: s.createdAt,
+                items: (s.items || []).map((it) => ({
+                    id: it.id,
+                    productId: it.productId,
+                    qty: it.qty,
+                    price: String(it.price),
+                    total: String(it.total),
+                })),
+            })),
+        });
+    })
+);
+
 salesRouter.post(
     '/sales',
     requireAuth,
@@ -108,8 +156,12 @@ salesRouter.post(
             for (const it of body.items) {
                 await tx.branchStock.upsert({
                     where: { branchId_productId: { branchId: body.branchId, productId: it.productId } },
-                    update: { quantity: { decrement: it.quantity } },
-                    create: { branchId: body.branchId, productId: it.productId, quantity: Math.max(0, 0 - it.quantity) },
+                    update: {},
+                    create: { branchId: body.branchId, productId: it.productId, quantity: 0 },
+                });
+                await tx.branchStock.update({
+                    where: { branchId_productId: { branchId: body.branchId, productId: it.productId } },
+                    data: { quantity: { decrement: it.quantity } },
                 });
             }
 

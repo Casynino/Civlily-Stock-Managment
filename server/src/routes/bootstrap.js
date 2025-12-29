@@ -21,6 +21,14 @@ bootstrapRouter.get(
 
         const products = await prisma.product.findMany({ orderBy: { createdAt: 'desc' } });
 
+        const sales = branchIds.length
+            ? await prisma.sale.findMany({
+                where: { branchId: { in: branchIds } },
+                orderBy: { createdAt: 'desc' },
+                take: 100,
+            })
+            : [];
+
         const stockRows = branchIds.length
             ? await prisma.branchStock.findMany({
                 where: { branchId: { in: branchIds } },
@@ -42,7 +50,20 @@ bootstrapRouter.get(
                 costPrice: String(p.costPrice),
             })),
             productStocks,
-            sales: [],
+            sales: sales.map((s) => ({
+                id: s.id,
+                code: s.code,
+                date: s.date,
+                time: s.time,
+                total: String(s.total),
+                paid: String(s.paid),
+                change: String(s.change),
+                status: s.status,
+                paymentMethod: s.paymentMethod,
+                branchId: s.branchId,
+                createdAt: s.createdAt,
+                customerName: '-',
+            })),
             expenses: [],
             transfers: [],
             customers: [],

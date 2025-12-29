@@ -1,6 +1,7 @@
 import React from 'react';
 
 import { useLocation, useNavigate } from 'react-router-dom';
+import { api as http } from '../api.js';
 import Modal from '../components/Modal.jsx';
 import { useStore } from '../data/StoreContext.jsx';
 import { useI18n } from '../i18n/I18nContext.jsx';
@@ -18,6 +19,7 @@ export default function SalesPage() {
     const nav = useNavigate();
     const [tab, setTab] = React.useState('SELL_NOW');
     const [error, setError] = React.useState('');
+    const [saving, setSaving] = React.useState(false);
 
     const [scanOpen, setScanOpen] = React.useState(false);
     const [scanError, setScanError] = React.useState('');
@@ -203,7 +205,7 @@ export default function SalesPage() {
         setCart((items) => items.filter((x) => x.productId !== productId));
     }
 
-    function recordQuickSale() {
+    async function recordQuickSale() {
         setError('');
         if (!scannedProduct) {
             setError(t('sales.scan.error.noProductSelected'));
@@ -220,32 +222,64 @@ export default function SalesPage() {
             return;
         }
 
-        const res = api.recordSale({
-            customerId,
-            branchId: activeBranchId,
-            items: [{ productId: scannedProduct.id, qty: q }],
-        });
-        if (!res.ok) {
-            setError(res.error || t('sales.error.failedToRecord'));
-            return;
+        try {
+            setSaving(true);
+            await http.post('/sales', {
+                branchId: String(activeBranchId || ''),
+                paymentMethod: 'CASH',
+                paid: Number(q) * Number(scannedProduct.sellingPrice ?? scannedProduct.price ?? 0),
+                items: [{ productId: scannedProduct.id, quantity: q }],
+            });
+
+            const b = await http.get('/bootstrap');
+            api.hydrate(b?.data);
+
+            setScannedBarcode('');
+            setScannedProductId('');
+            setQuickQty(1);
+            setTab('HISTORY');
+        } catch (e) {
+            setError(e?.response?.data?.error || 'SaleFailed');
+        } finally {
+            setSaving(false);
         }
-        setScannedBarcode('');
-        setScannedProductId('');
-        setQuickQty(1);
-        setTab('HISTORY');
     }
 
-    function completeSale() {
+    async function completeSale() {
         setError('');
-        const res = api.recordSale({ customerId, branchId: activeBranchId, items: cart });
-        if (!res.ok) {
-            setError(res.error || t('sales.error.failedToRecord'));
+
+        const branchId = String(activeBranchId || '');
+        if (!branchId) {
+            setError('MissingBranch');
             return;
         }
-        setCart([]);
-        setProductQuery('');
-        setQty(1);
-        setTab('HISTORY');
+
+        const payload = {
+            branchId,
+            paymentMethod: 'CASH',
+            paid: Number(cartTotal || 0),
+            items: cart.map((it) => ({
+                productId: it.productId,
+                quantity: Number(it.qty || 0),
+            })),
+        };
+
+        try {
+            setSaving(true);
+            await http.post('/sales', payload);
+
+            const b = await http.get('/bootstrap');
+            api.hydrate(b?.data);
+
+            setCart([]);
+            setProductQuery('');
+            setQty(1);
+            setTab('HISTORY');
+        } catch (e) {
+            setError(e?.response?.data?.error || 'SaleFailed');
+        } finally {
+            setSaving(false);
+        }
     }
 
     const historyRows = sales
@@ -315,7 +349,7 @@ export default function SalesPage() {
                                         <span className="fieldLabel">{t('sales.scan.qty')}</span>
                                         <input className="input" type="number" min="1" value={quickQty} onChange={(e) => setQuickQty(e.target.value)} />
                                     </label>
-                                    <button className="button" type="button" onClick={recordQuickSale} style={{ background: 'var(--primary)', color: 'var(--primaryText)' }}>
+                                    <button className="button" type="button" onClick={recordQuickSale} disabled={saving} style={{ background: 'var(--primary)', color: 'var(--primaryText)' }}>
                                         {t('sales.scan.recordSale')}
                                     </button>
                                 </div>
@@ -404,7 +438,7 @@ export default function SalesPage() {
 
                         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div className="chip">{t('sales.totalLabel', { total: money(currency, cartTotal) })}</div>
-                            <button className="button" type="button" onClick={completeSale} style={{ background: 'var(--primary)', color: 'var(--primaryText)' }}>
+                            <button className="button" type="button" onClick={completeSale} disabled={saving || cart.length === 0} style={{ background: 'var(--primary)', color: 'var(--primaryText)' }}>
                                 {t('sales.completeSale')}
                             </button>
                         </div>
