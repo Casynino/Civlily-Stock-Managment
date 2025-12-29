@@ -6,6 +6,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 
 import { authRouter } from './routes/auth.js';
+import { bootstrapRouter } from './routes/bootstrap.js';
 import { healthRouter } from './routes/health.js';
 import { productsRouter } from './routes/products.js';
 import { salesRouter } from './routes/sales.js';
@@ -50,6 +51,7 @@ app.get('/', (_req, res) => res.json({ ok: true }));
 
 app.use('/api', healthRouter);
 app.use('/api', authRouter);
+app.use('/api', bootstrapRouter);
 app.use('/api', productsRouter);
 app.use('/api', salesRouter);
 

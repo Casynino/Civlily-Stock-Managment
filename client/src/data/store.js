@@ -1,5 +1,17 @@
 export const STORAGE_KEY = 'civlily_frontend_v1';
 
+export const ONLINE_ONLY = (() => {
+    try {
+        const prod = Boolean(import.meta?.env?.PROD);
+        const base = String(import.meta?.env?.VITE_API_BASE || '');
+        if (!prod) return false;
+        if (!base) return false;
+        return !/localhost|127\.0\.0\.1/i.test(base);
+    } catch {
+        return false;
+    }
+})();
+
 function uid(prefix) {
     return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
@@ -257,6 +269,7 @@ export function seedState() {
 }
 
 export function loadState() {
+    if (ONLINE_ONLY) return null;
     try {
         const raw = localStorage.getItem(STORAGE_KEY);
         if (!raw) return null;
@@ -269,12 +282,33 @@ export function loadState() {
 }
 
 export function saveState(state) {
+    if (ONLINE_ONLY) return;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
 
 export function ensureState() {
     const existing = loadState();
     if (existing) return existing;
+    if (ONLINE_ONLY) {
+        return normalizeState({
+            version: 1,
+            counters: { productSeq: 1 },
+            settings: {
+                currency: 'TZS',
+                activeBranchId: '',
+                language: 'en',
+            },
+            categories: [],
+            branches: [],
+            products: [],
+            productStocks: {},
+            customers: [],
+            staff: [],
+            expenses: [],
+            sales: [],
+            transfers: [],
+        });
+    }
     const seeded = seedState();
     saveState(seeded);
     return seeded;

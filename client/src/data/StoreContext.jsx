@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { createId, ensureState, saveState, seedState } from './store.js';
+import { createId, ensureState, ONLINE_ONLY, saveState, seedState } from './store.js';
 
 const StoreContext = React.createContext(null);
 
@@ -31,7 +31,7 @@ export function StoreProvider({ children }) {
     const [state, setState] = React.useState(() => ensureState());
 
     React.useEffect(() => {
-        saveState(state);
+        if (!ONLINE_ONLY) saveState(state);
     }, [state]);
 
     const api = React.useMemo(() => {
@@ -354,9 +354,27 @@ export function StoreProvider({ children }) {
         }
 
         function reset() {
+            if (ONLINE_ONLY) {
+                setState(ensureState());
+                return;
+            }
             const seeded = seedState();
             saveState(seeded);
             setState(seeded);
+        }
+
+        function hydrate(payload) {
+            const next = payload && typeof payload === 'object' ? payload : {};
+            setState((s) => ({
+                ...s,
+                branches: Array.isArray(next.branches) ? next.branches : s.branches,
+                products: Array.isArray(next.products) ? next.products : s.products,
+                productStocks: next.productStocks && typeof next.productStocks === 'object' ? next.productStocks : s.productStocks,
+                customers: Array.isArray(next.customers) ? next.customers : s.customers,
+                sales: Array.isArray(next.sales) ? next.sales : s.sales,
+                expenses: Array.isArray(next.expenses) ? next.expenses : s.expenses,
+                transfers: Array.isArray(next.transfers) ? next.transfers : s.transfers,
+            }));
         }
 
         return {
@@ -368,6 +386,7 @@ export function StoreProvider({ children }) {
             update,
             remove,
             reset,
+            hydrate,
         };
     }, []);
 

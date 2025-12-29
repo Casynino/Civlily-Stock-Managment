@@ -36,6 +36,13 @@ export function AuthProvider({ children }) {
                 const next = r?.data?.staff || null;
                 setStaff(next);
                 localStorage.setItem(SESSION_KEY, JSON.stringify(next));
+
+                try {
+                    const b = await http.get('/bootstrap');
+                    if (!cancelled) api.hydrate(b?.data);
+                } catch {
+                    // ignore
+                }
             } catch {
                 // ignore - interceptor will handle 401 and force logout
             }
@@ -82,6 +89,13 @@ export function AuthProvider({ children }) {
 
         setStaff(nextStaff);
         localStorage.setItem(SESSION_KEY, JSON.stringify(nextStaff));
+
+        try {
+            const b = await http.get('/bootstrap');
+            api.hydrate(b?.data);
+        } catch {
+            // ignore
+        }
 
         const branches = Array.isArray(state.branches) ? state.branches : [];
         const fallbackBranchId = String(branches[0]?.id || '');
