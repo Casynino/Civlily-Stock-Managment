@@ -287,6 +287,80 @@ textarea {
     align-items: stretch;
 }
 
+@media (max-width: 560px) {
+    .authPhotoLayout {
+        min-height: 100dvh;
+        padding: 14px;
+        align-items: start;
+    }
+
+    .authPhotoInner {
+        gap: 12px;
+    }
+
+    .authOverlay {
+        border-radius: 20px;
+        padding: 16px;
+    }
+
+    .authOverlayContent {
+        min-height: auto;
+        gap: 12px;
+    }
+
+    .authHeroTop {
+        flex-wrap: wrap;
+        justify-content: flex-start;
+        gap: 10px;
+    }
+
+    .authHeroPill {
+        justify-self: start;
+        padding: 8px 10px;
+        font-size: 11px;
+    }
+
+    .authHeroHeadline {
+        font-size: 22px;
+        letter-spacing: 0.14em;
+    }
+
+    .authHeroHeadline strong {
+        font-size: 34px;
+        letter-spacing: 0.02em;
+    }
+
+    .authWelcomeMessage,
+    .authHeroText {
+        max-width: 100%;
+        font-size: 12px;
+        line-height: 1.6;
+    }
+
+    .authFeatureStrip {
+        gap: 8px;
+    }
+
+    .authFeatureChip {
+        padding: 8px 10px;
+        font-size: 11px;
+    }
+
+    .authPanel {
+        border-radius: 20px;
+        padding: 14px;
+    }
+
+    .authPanelHeader {
+        gap: 10px;
+    }
+
+    .authCode {
+        overflow-wrap: anywhere;
+        word-break: break-word;
+    }
+}
+
 @media (min-width: 980px) {
     .authPhotoInner {
         grid-template-columns: 1fr 420px;
