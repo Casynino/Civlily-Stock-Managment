@@ -11,6 +11,7 @@
         "prisma:generate": "prisma generate",
         "prisma:migrate": "prisma migrate dev",
         "prisma:deploy": "prisma migrate deploy",
+        "prisma:push": "prisma db push",
         "prisma:studio": "prisma studio",
         "db:seed": "node prisma/seed.js"
     },
@@ -23,9 +24,8 @@
         "helmet": "^7.1.0",
         "jsonwebtoken": "^9.0.2",
         "morgan": "^1.10.0",
+        "prisma": "^5.18.0",
         "zod": "^3.23.8"
     },
-    "devDependencies": {
-        "prisma": "^5.18.0"
-    }
+    "devDependencies": {}
 }
