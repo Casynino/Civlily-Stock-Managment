@@ -1,9 +1,15 @@
 import axios from 'axios';
 
 const API_BASE = (() => {
-    const base = String(import.meta.env.VITE_API_BASE || '').trim();
+    const raw = String(import.meta.env.VITE_API_BASE || '').trim();
     const prod = Boolean(import.meta.env.PROD);
-    if (base) return base;
+    if (raw) {
+        const base = raw.replace(/\/+$/, '');
+        if (prod && !/\/api$/i.test(base)) {
+            throw new Error('Invalid VITE_API_BASE (production). It must end with "/api".');
+        }
+        return base;
+    }
     if (prod) throw new Error('Missing VITE_API_BASE (production).');
     return 'http://localhost:4000/api';
 })();
