@@ -126,7 +126,7 @@ export const STRINGS = {
         'inventory.newProduct': '+ New Product',
         'inventory.empty': 'No matching products.',
 
-        'inventory.table.id': 'ID',
+        'inventory.table.id': 'Code',
         'inventory.table.name': 'Name',
         'inventory.table.sku': 'SKU',
         'inventory.table.category': 'Category',
@@ -372,7 +372,7 @@ export const STRINGS = {
         'inventory.newProduct': '+ 新建商品',
         'inventory.empty': '没有匹配的商品。',
 
-        'inventory.table.id': 'ID',
+        'inventory.table.id': '编号',
         'inventory.table.name': '名称',
         'inventory.table.sku': 'SKU',
         'inventory.table.category': '分类',

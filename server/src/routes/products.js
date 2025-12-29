@@ -19,6 +19,7 @@ productsRouter.get(
         res.json({
             product: {
                 id: product.id,
+                code: product.code,
                 name: product.name,
                 sku: product.sku,
                 qr: product.qr,

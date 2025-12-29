@@ -49,9 +49,16 @@ bootstrapRouter.get(
         res.json({
             branches,
             products: products.map((p) => ({
-                ...p,
+                id: p.id,
+                code: p.code,
+                sku: p.sku,
+                name: p.name,
+                qr: p.qr,
                 sellingPrice: String(p.sellingPrice),
                 costPrice: String(p.costPrice),
+                status: p.status,
+                createdAt: p.createdAt,
+                updatedAt: p.updatedAt,
             })),
             productStocks,
             sales: sales.map((s) => ({

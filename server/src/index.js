@@ -5,6 +5,7 @@ import express from 'express';
 import helmet from 'helmet';
 import morgan from 'morgan';
 
+import { prisma } from './lib/prisma.js';
 import { authRouter } from './routes/auth.js';
 import { bootstrapRouter } from './routes/bootstrap.js';
 import { customersRouter } from './routes/customers.js';
@@ -67,6 +68,43 @@ app.use((err, _req, res, _next) => {
 });
 
 const port = Number(process.env.PORT || 4000);
-app.listen(port, () => {
-    console.log(`API listening on http://localhost:${port}`);
-});
+
+async function ensureProductCodes() {
+    const existing = await prisma.product.findMany({
+        select: { id: true, code: true, createdAt: true },
+        orderBy: { createdAt: 'asc' },
+    });
+
+    const re = /^PR(\d+)$/i;
+    let max = 0;
+    for (const p of existing) {
+        const m = String(p.code || '').trim().match(re);
+        if (!m) continue;
+        const n = Number(m[1]);
+        if (Number.isFinite(n)) max = Math.max(max, n);
+    }
+
+    const missing = existing.filter((p) => !String(p.code || '').trim());
+    if (missing.length === 0) return;
+
+    let seq = max + 1;
+    const updates = [];
+    for (const p of missing) {
+        const code = `PR${String(seq).padStart(3, '0')}`;
+        seq += 1;
+        updates.push(prisma.product.update({ where: { id: p.id }, data: { code } }));
+    }
+    await prisma.$transaction(updates);
+}
+
+(async () => {
+    try {
+        await ensureProductCodes();
+    } catch (e) {
+        console.error('Product code backfill failed:', e);
+    }
+
+    app.listen(port, () => {
+        console.log(`API listening on http://localhost:${port}`);
+    });
+})();

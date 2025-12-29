@@ -184,7 +184,7 @@ export default function InventoryPage() {
             String(p.name).toLowerCase().includes(q)
             || String(p.sku).toLowerCase().includes(q)
             || String(p.barcode || '').toLowerCase().includes(q)
-            || String(p.id).toLowerCase().includes(q)
+            || String(p.code || '').toLowerCase().includes(q)
             || categoryName.includes(q)
         );
     });
@@ -332,7 +332,7 @@ export default function InventoryPage() {
                                             style={{ width: 40, height: 40, borderRadius: 12, objectFit: 'cover', border: '1px solid var(--border)' }}
                                         />
                                     </td>
-                                    <td style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace', fontSize: 12 }}>{p.id}</td>
+                                    <td style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace', fontSize: 12 }}>{p.code || '—'}</td>
                                     <td style={{ fontWeight: 800 }}>{p.name}</td>
                                     <td>{p.sku}</td>
                                     <td>{categoryById.get(String(p.categoryId || ''))?.name || '—'}</td>
