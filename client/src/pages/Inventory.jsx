@@ -1,5 +1,6 @@
 import React from 'react';
 
+import { api as http } from '../api.js';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import Modal from '../components/Modal.jsx';
 import { useStore } from '../data/StoreContext.jsx';
@@ -204,11 +205,12 @@ export default function InventoryPage() {
         setConfirmOpen(true);
     }
 
-    function save() {
-        if (ONLINE_ONLY) {
-            setError('OnlineOnly');
-            return;
-        }
+    async function refresh() {
+        const b = await http.get('/bootstrap');
+        api.hydrate(b?.data);
+    }
+
+    async function save() {
         const name = String(form.name || '').trim();
         const sku = String(form.sku || '').trim();
         const categoryId = String(form.categoryId || '').trim();
@@ -248,13 +250,29 @@ export default function InventoryPage() {
             status,
         };
 
-        if (editingId) {
-            api.update('products', editingId, patch);
-        } else {
-            api.create('products', { ...patch });
+        try {
+            setError('');
+            const branchId = String(activeBranchId || '');
+            if (!branchId) throw new Error('MissingBranch');
+
+            if (ONLINE_ONLY) {
+                if (editingId) {
+                    await http.put(`/products/${editingId}`, { ...patch, branchId });
+                } else {
+                    await http.post('/products', { ...patch, branchId });
+                }
+                await refresh();
+            } else if (editingId) {
+                api.update('products', editingId, patch);
+            } else {
+                api.create('products', { ...patch });
+            }
+
+            setEditorOpen(false);
+            setEditingId(null);
+        } catch (e) {
+            setError(e?.response?.data?.error || e?.message || 'Failed to save product.');
         }
-        setEditorOpen(false);
-        setEditingId(null);
     }
 
     return (
@@ -295,15 +313,11 @@ export default function InventoryPage() {
                             className="input"
                             style={{ minWidth: 240 }}
                         />
-                        <button className="button" type="button" onClick={openCreate} disabled={ONLINE_ONLY}>{t('inventory.newProduct')}</button>
+                        <button className="button" type="button" onClick={openCreate}>{t('inventory.newProduct')}</button>
                     </div>
                 </div>
 
                 <div className="divider" />
-
-                {ONLINE_ONLY ? (
-                    <div className="empty">Online-only mode: inventory editing will be enabled once the backend CRUD endpoints are added.</div>
-                ) : null}
 
                 <div style={{ overflowX: 'auto' }}>
                     <table className="table" style={{ minWidth: 1180 }}>
@@ -345,10 +359,19 @@ export default function InventoryPage() {
                                     <td>{t(`status.${String(p.status || '').toLowerCase()}`) || p.status}</td>
                                     <td>
                                         <div className="tableActions">
-                                            <button className="button" type="button" onClick={() => openEdit(p.id)} disabled={ONLINE_ONLY}>
+                                            <button
+                                                className="button"
+                                                type="button"
+                                                onClick={() => openEdit(p.id)}
+                                            >
                                                 {t('common.edit')}
                                             </button>
-                                            <button className="button" type="button" onClick={() => openDelete(p.id)} disabled={ONLINE_ONLY} style={{ background: 'rgba(214,69,93,0.10)' }}>
+                                            <button
+                                                className="button"
+                                                type="button"
+                                                onClick={() => openDelete(p.id)}
+                                                style={{ background: 'rgba(214,69,93,0.10)' }}
+                                            >
                                                 {t('common.delete')}
                                             </button>
                                         </div>
@@ -383,7 +406,6 @@ export default function InventoryPage() {
                             className="button"
                             type="button"
                             onClick={save}
-                            disabled={ONLINE_ONLY}
                             style={{ background: 'var(--primary)', color: 'var(--primaryText)' }}
                         >
                             {t('common.save')}
@@ -584,6 +606,7 @@ export default function InventoryPage() {
                             className="button"
                             type="button"
                             onClick={() => {
+                                if (ONLINE_ONLY) return;
                                 setCategoryError('');
                                 setCategoryName('');
                                 setCategoryModalOpen(true);
@@ -624,22 +647,6 @@ export default function InventoryPage() {
                                                 <div className="tableActions">
                                                     {isEditing ? (
                                                         <>
-                                                            <button
-                                                                className="button"
-                                                                type="button"
-                                                                onClick={() => {
-                                                                    const name = String(categoryEditName || '').trim();
-                                                                    if (!name) return;
-                                                                    const dup = categories.some((x) => x.id !== c.id && String(x.name || '').toLowerCase() === name.toLowerCase());
-                                                                    if (dup) return;
-                                                                    api.update('categories', c.id, { name });
-                                                                    setEditingCategoryId(null);
-                                                                    setCategoryEditName('');
-                                                                }}
-                                                                style={{ background: 'var(--primary)', color: 'var(--primaryText)' }}
-                                                            >
-                                                                {t('common.save')}
-                                                            </button>
                                                             <button
                                                                 className="button"
                                                                 type="button"
@@ -728,6 +735,7 @@ export default function InventoryPage() {
                             className="button"
                             type="button"
                             onClick={() => {
+                                if (ONLINE_ONLY) return;
                                 const name = String(categoryName || '').trim();
                                 if (!name) {
                                     setCategoryError(t('inventory.categories.error.nameRequired'));
@@ -769,9 +777,23 @@ export default function InventoryPage() {
                     setConfirmId(null);
                 }}
                 onConfirm={() => {
-                    if (confirmId) api.remove('products', confirmId);
-                    setConfirmOpen(false);
-                    setConfirmId(null);
+                    (async () => {
+                        if (!confirmId) return;
+                        setError('');
+                        try {
+                            if (ONLINE_ONLY) {
+                                await http.delete(`/products/${confirmId}`);
+                                await refresh();
+                            } else {
+                                api.remove('products', confirmId);
+                            }
+                        } catch (e) {
+                            setError(e?.response?.data?.error || 'Failed to delete product.');
+                        } finally {
+                            setConfirmOpen(false);
+                            setConfirmId(null);
+                        }
+                    })();
                 }}
             />
         </div>

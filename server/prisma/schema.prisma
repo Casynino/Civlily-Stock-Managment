@@ -69,6 +69,9 @@ model Product {
   sku          String?  @unique
   name         String
   qr           String?  @unique
+  categoryId   String?
+  description  String?
+  imageDataUrl String?
   sellingPrice Decimal  @default(0)
   costPrice    Decimal  @default(0)
   status       String   @default("Active")
