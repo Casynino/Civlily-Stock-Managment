@@ -3,26 +3,15 @@ import React from 'react';
 import { api as http, setAuthToken, setBranchId } from './api.js';
 import { useStore } from './data/StoreContext.jsx';
 
-const TOKEN_KEY = 'token';
-const SESSION_KEY = 'civlily_session_staff_v1';
-
 const AuthContext = React.createContext(null);
 
 export function AuthProvider({ children }) {
     const { state, api } = useStore();
     const [staff, setStaff] = React.useState(null);
-    const [authLoading, setAuthLoading] = React.useState(() => Boolean(localStorage.getItem(TOKEN_KEY)));
+    const [authLoading, setAuthLoading] = React.useState(true);
     const [authError, setAuthError] = React.useState('');
 
     React.useEffect(() => {
-        const token = localStorage.getItem(TOKEN_KEY);
-        if (token) setAuthToken(token);
-    }, []);
-
-    React.useEffect(() => {
-        const token = localStorage.getItem(TOKEN_KEY);
-        if (!token) return;
-
         let cancelled = false;
         (async () => {
             try {
@@ -35,7 +24,6 @@ export function AuthProvider({ children }) {
                 if (cancelled) return;
                 const next = r?.data?.staff || null;
                 setStaff(next);
-                localStorage.setItem(SESSION_KEY, JSON.stringify(next));
 
                 try {
                     const b = await http.get('/bootstrap', {
@@ -56,8 +44,6 @@ export function AuthProvider({ children }) {
                 const status = e?.response?.status;
                 if (status === 401) {
                     setStaff(null);
-                    localStorage.removeItem(SESSION_KEY);
-                    localStorage.removeItem(TOKEN_KEY);
                     setAuthToken(null);
                     setBranchId(null);
                 } else {
@@ -100,15 +86,9 @@ export function AuthProvider({ children }) {
         setAuthError('');
         try {
             const r = await http.post('/auth/login', { identifier, password: pass });
-            const token = String(r?.data?.token || '');
             const nextStaff = r?.data?.staff || null;
-            if (!token || !nextStaff) throw new Error('Invalid credentials');
-
-            localStorage.setItem(TOKEN_KEY, token);
-            setAuthToken(token);
-
+            if (!nextStaff) throw new Error('Invalid credentials');
             setStaff(nextStaff);
-            localStorage.setItem(SESSION_KEY, JSON.stringify(nextStaff));
 
             try {
                 const b = await http.get('/bootstrap', {
@@ -127,14 +107,18 @@ export function AuthProvider({ children }) {
         }
     }
 
-    function logout() {
+    async function logout() {
         setStaff(null);
         setAuthError('');
         setAuthLoading(false);
-        localStorage.removeItem(SESSION_KEY);
-        localStorage.removeItem(TOKEN_KEY);
-        setAuthToken(null);
-        setBranchId(null);
+        try {
+            await http.post('/auth/logout');
+        } catch {
+            // ignore
+        } finally {
+            setAuthToken(null);
+            setBranchId(null);
+        }
     }
 
     return (

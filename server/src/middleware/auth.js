@@ -3,10 +3,26 @@ import jwt from 'jsonwebtoken';
 import { httpError } from '../lib/http.js';
 import { prisma } from '../lib/prisma.js';
 
+function readCookie(req, name) {
+    const header = String(req.headers.cookie || '');
+    if (!header) return '';
+    const parts = header.split(';');
+    for (const part of parts) {
+        const idx = part.indexOf('=');
+        if (idx === -1) continue;
+        const k = part.slice(0, idx).trim();
+        if (k !== name) continue;
+        return decodeURIComponent(part.slice(idx + 1).trim());
+    }
+    return '';
+}
+
 export async function requireAuth(req, _res, next) {
     try {
         const header = String(req.headers.authorization || '');
-        const token = header.startsWith('Bearer ') ? header.slice(7) : '';
+        const bearer = header.startsWith('Bearer ') ? header.slice(7) : '';
+        const cookieToken = readCookie(req, 'civlily_token');
+        const token = bearer || cookieToken;
         if (!token) return next(httpError(401, 'Unauthorized'));
 
         const payload = jwt.verify(token, process.env.JWT_SECRET || 'change-me');

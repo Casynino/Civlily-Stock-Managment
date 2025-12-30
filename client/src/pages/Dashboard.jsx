@@ -1,5 +1,6 @@
 import React from 'react';
 
+import { API_BASE, api as http } from '../api.js';
 import { useStore } from '../data/StoreContext.jsx';
 import { useI18n } from '../i18n/I18nContext.jsx';
 
@@ -13,6 +14,25 @@ export default function DashboardPage() {
     const { state } = useStore();
     const { t } = useI18n();
     const [mode, setMode] = React.useState('ONLINE');
+    const [diag, setDiag] = React.useState({ loading: true, ok: false, error: '' });
+
+    React.useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            try {
+                setDiag({ loading: true, ok: false, error: '' });
+                const r = await http.get('/diagnostics/db', { params: { _ts: Date.now() } });
+                if (cancelled) return;
+                setDiag({ loading: false, ok: Boolean(r?.data?.ok), error: '' });
+            } catch (e) {
+                if (cancelled) return;
+                setDiag({ loading: false, ok: false, error: e?.response?.data?.error || e?.message || 'Diagnostics failed' });
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     const currency = state.settings?.currency || 'TZS';
     const activeBranch = (state.branches || []).find((b) => b.id === state.settings?.activeBranchId) || (state.branches || [])[0];
@@ -114,6 +134,15 @@ export default function DashboardPage() {
                         >
                             {t('dashboard.offlineMode')}
                         </button>
+                    </div>
+
+                    <div className="divider" style={{ marginTop: 12 }} />
+                    <div style={{ display: 'grid', gap: 6, marginTop: 12, fontSize: 12 }}>
+                        <div className="muted"><strong>API Base:</strong> {API_BASE}</div>
+                        <div className="muted">
+                            <strong>DB Diagnostics:</strong>{' '}
+                            {diag.loading ? 'Checking…' : diag.ok ? 'OK' : `FAILED: ${diag.error}`}
+                        </div>
                     </div>
                 </div>
 

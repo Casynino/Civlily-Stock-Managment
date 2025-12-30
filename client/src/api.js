@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE = (() => {
+export const API_BASE = (() => {
     const raw = String(import.meta.env.VITE_API_BASE || '').trim();
     const prod = Boolean(import.meta.env.PROD);
     if (raw) {
@@ -10,12 +10,13 @@ const API_BASE = (() => {
         }
         return base;
     }
-    if (prod) throw new Error('Missing VITE_API_BASE (production).');
+    if (prod) return '/api';
     return 'http://localhost:4000/api';
 })();
 
 export const api = axios.create({
     baseURL: API_BASE,
+    withCredentials: true,
 });
 
 export function installUnauthorizedInterceptor(onUnauthorized) {
@@ -24,8 +25,7 @@ export function installUnauthorizedInterceptor(onUnauthorized) {
         (err) => {
             const status = err?.response?.status;
             if (status === 401 && typeof onUnauthorized === 'function') {
-                const token = localStorage.getItem('token');
-                if (token !== 'demo') onUnauthorized();
+                onUnauthorized();
             }
             return Promise.reject(err);
         }

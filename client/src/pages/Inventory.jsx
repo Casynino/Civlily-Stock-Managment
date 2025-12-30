@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { api as http } from '../api.js';
+import { API_BASE, api as http } from '../api.js';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import Modal from '../components/Modal.jsx';
 import { useStore } from '../data/StoreContext.jsx';
@@ -36,6 +36,9 @@ export default function InventoryPage() {
     const { state, api } = useStore();
     const { t } = useI18n();
     const [query, setQuery] = React.useState('');
+
+    const [diag, setDiag] = React.useState({ loading: false, ok: false, error: '' });
+    const [refreshError, setRefreshError] = React.useState('');
 
     const [editorOpen, setEditorOpen] = React.useState(false);
     const [editingId, setEditingId] = React.useState(null);
@@ -206,9 +209,29 @@ export default function InventoryPage() {
     }
 
     async function refresh() {
-        const b = await http.get('/bootstrap');
-        api.hydrate(b?.data);
+        try {
+            setRefreshError('');
+            const b = await http.get('/bootstrap', { params: { _ts: Date.now() } });
+            api.hydrate(b?.data);
+        } catch (e) {
+            setRefreshError(e?.response?.data?.error || e?.message || 'Failed to refresh');
+            throw e;
+        }
     }
+
+    async function runDiagnostics() {
+        try {
+            setDiag({ loading: true, ok: false, error: '' });
+            const r = await http.get('/diagnostics/db', { params: { _ts: Date.now() } });
+            setDiag({ loading: false, ok: Boolean(r?.data?.ok), error: '' });
+        } catch (e) {
+            setDiag({ loading: false, ok: false, error: e?.response?.data?.error || e?.message || 'Diagnostics failed' });
+        }
+    }
+
+    React.useEffect(() => {
+        runDiagnostics();
+    }, []);
 
     async function save() {
         const name = String(form.name || '').trim();
@@ -282,6 +305,26 @@ export default function InventoryPage() {
                     <div>
                         <div className="sectionTitle">{t('inventory.title')}</div>
                         <div className="muted" style={{ fontSize: 12 }}>{t('inventory.subtitle')}</div>
+                        <div className="muted" style={{ fontSize: 12, marginTop: 6 }}>
+                            <strong>API Base:</strong> {API_BASE}
+                        </div>
+                        <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>
+                            <strong>DB Diagnostics:</strong>{' '}
+                            {diag.loading ? 'Checking…' : diag.ok ? 'OK' : `FAILED: ${diag.error}`}
+                            <button
+                                className="button"
+                                type="button"
+                                onClick={runDiagnostics}
+                                style={{ marginLeft: 10, padding: '6px 10px' }}
+                            >
+                                Test
+                            </button>
+                        </div>
+                        {refreshError ? (
+                            <div style={{ fontSize: 12, marginTop: 6, color: 'var(--danger)', fontWeight: 800 }}>
+                                Refresh error: {refreshError}
+                            </div>
+                        ) : null}
                     </div>
                     <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
                         <button

@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { createId, ensureState, ONLINE_ONLY, saveState, seedState } from './store.js';
+import { createId, ensureState, ONLINE_ONLY, saveState } from './store.js';
 
 const StoreContext = React.createContext(null);
 
@@ -29,7 +29,6 @@ function ensureStockBuckets(state, branchIds) {
 
 export function StoreProvider({ children }) {
     const [state, setState] = React.useState(() => ensureState());
-
     React.useEffect(() => {
         if (!ONLINE_ONLY) saveState(state);
     }, [state]);
@@ -360,12 +359,7 @@ export function StoreProvider({ children }) {
         }
 
         function reset() {
-            if (ONLINE_ONLY) {
-                throw new Error('OnlineOnly');
-            }
-            const seeded = seedState();
-            saveState(seeded);
-            setState(seeded);
+            throw new Error('OnlineOnly');
         }
 
         function hydrate(payload) {

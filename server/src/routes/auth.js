@@ -9,6 +9,35 @@ import { requireAuth } from '../middleware/auth.js';
 
 export const authRouter = Router();
 
+function setSessionCookie(res, token) {
+    const isProd = String(process.env.NODE_ENV || '').toLowerCase() === 'production';
+    const maxAgeMs = 7 * 24 * 60 * 60 * 1000;
+    const sameSite = isProd ? 'None' : 'Lax';
+    const parts = [
+        `civlily_token=${encodeURIComponent(String(token || ''))}`,
+        'Path=/',
+        `Max-Age=${Math.floor(maxAgeMs / 1000)}`,
+        'HttpOnly',
+        `SameSite=${sameSite}`,
+    ];
+    if (isProd) parts.push('Secure');
+    res.setHeader('Set-Cookie', parts.join('; '));
+}
+
+function clearSessionCookie(res) {
+    const isProd = String(process.env.NODE_ENV || '').toLowerCase() === 'production';
+    const sameSite = isProd ? 'None' : 'Lax';
+    const parts = [
+        'civlily_token=',
+        'Path=/',
+        'Max-Age=0',
+        'HttpOnly',
+        `SameSite=${sameSite}`,
+    ];
+    if (isProd) parts.push('Secure');
+    res.setHeader('Set-Cookie', parts.join('; '));
+}
+
 authRouter.post(
     '/auth/login',
     asyncHandler(async (req, res) => {
@@ -38,8 +67,9 @@ authRouter.post(
             { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
         );
 
+        setSessionCookie(res, token);
+
         res.json({
-            token,
             staff: {
                 id: staff.id,
                 staffId: staff.staffId,
@@ -50,6 +80,14 @@ authRouter.post(
                 status: staff.status,
             },
         });
+    })
+);
+
+authRouter.post(
+    '/auth/logout',
+    asyncHandler(async (_req, res) => {
+        clearSessionCookie(res);
+        res.json({ ok: true });
     })
 );
 
